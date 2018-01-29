@@ -1,0 +1,52 @@
+---
+- hosts: all
+  become: yes
+
+  vars_files:
+    - vars/nginx.yml
+    - vars/php7.yml
+    - vars/es.yml
+    - vars/mariadb.yml
+    - vars/supervisor.yml
+
+  pre_tasks:
+    - name: "Add repository for PHP 7.0."
+      apt_repository: repo="ppa:ondrej/php"  state=present
+
+    - name: Run "apt-get update"
+      apt: update_cache=yes cache_valid_time=3600
+
+    - name: Install pip
+      apt: name=python-pip state=present
+
+    - name: Install codecept
+      get_url: url="http://codeception.com/codecept.phar" dest="/usr/local/bin/codecept" mode=a+x
+
+  roles:
+    - jdauphant.nginx
+    - geerlingguy.git
+    - geerlingguy.php
+    - geerlingguy.composer
+    - geerlingguy.nodejs
+    - geerlingguy.java
+    - geerlingguy.elasticsearch
+    - geerlingguy.redis
+    - geerlingguy.mysql
+    - geerlingguy.supervisor
+
+  handlers:
+    - name: restart php7
+      service: name=php7.0-fpm state=restarted
+
+  post_tasks:
+    - name: Install ES Head
+      elasticsearch_plugin: name=mobz/elasticsearch-head state=present
+
+    - name: Install elasticsearch ICU Analysis
+      elasticsearch_plugin: name=analysis-icu state=present
+    
+    - name: Install elasticsearch delete-by-query
+      elasticsearch_plugin: name=delete-by-query state=present
+      
+    - name: Up running ES
+      service: name=elasticsearch state=restarted

@@ -1,0 +1,16 @@
+---
+supervisor_version: latest
+supervisor_started: true
+supervisor_enabled: true
+
+supervisor_programs:
+  - name: 'send_create_order_mail'
+    command: 'php /var/www/myproject/bin/console myproject:queue.create_order:send_mail'
+    state: present
+    configuration: |
+      autostart=true
+      autorestart=true
+      stderr_logfile=/var/log/supervisor/send_create_order_mail.stderr.log
+      stdout_logfile=/var/log/supervisor/send_create_order_mail.stdout.log
+      process_name=%(process_num)s
+      numprocs=3

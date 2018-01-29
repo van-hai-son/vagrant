@@ -1,0 +1,38 @@
+---
+# Deploy API
+- hosts: all
+   
+  tasks:
+  - name: Determine the git directory
+    stat:
+      path: /var/www/myproject
+    register: git_dir
+
+  - name: Clone repository
+    command: "git clone https://github.com/van-hai-son/myproject.git"
+    args:
+      chdir: /var/www
+    when: git_dir.stat.exists == false or git_dir.stat.isdir == false
+
+  - name: Composer install
+    command: "composer install --prefer-dist --no-interaction"
+    args:
+      chdir: /var/www/myproject
+
+  - name: Flush Redis
+    shell: redis-cli flushall
+  
+  - name: Dump doctrine
+    shell: "php bin/console doctrine:cache:clear-metadata && bin/console doctrine:schema:update --force --dump-sql"
+    args:
+      chdir: /var/www/myproject
+
+  - name: Create Elasticsearch index
+    shell: "php bin/console ongr:es:index:create"
+    args:
+      chdir: /var/www/myproject
+
+  - name: Clear cache
+    shell: "php bin/console cache:clear"
+    args:
+      chdir: /var/www/myproject

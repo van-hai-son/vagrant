@@ -1,0 +1,53 @@
+---
+nginx_sites:
+  myproject:
+    - listen 80
+    - server_name myproject.test
+    - add_header  X-Robots-Tag "noindex, nofollow, nosnippet, noarchive"
+    - root /var/www/myproject/web
+     
+    - error_log   /var/log/nginx/myproject.error.log
+    - access_log  /var/log/nginx/myproject.access.log
+
+    - rewrite     ^/(app|app_dev)\.php/?(.*)$ /$1 permanent
+    - client_max_body_size 50M
+
+    - location / {
+            index       app_dev.php;
+            try_files   $uri @rewriteapp; }
+
+    - location @rewriteapp {
+            rewrite     ^(.*)$ /app_dev.php/$1 last; }
+
+    - location ~ ^/(info|app|app_dev|config)\.php(/|$) {
+            fastcgi_pass            unix:/var/run/php/php7.0-fpm.sock;
+            fastcgi_buffer_size     16k;
+            fastcgi_buffers         4 16k;
+            fastcgi_split_path_info ^(.+\.php)(/.*)$;
+            include                 fastcgi_params;
+            fastcgi_param           SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_param           HTTPS           off; }
+
+nginx_http_params:
+  - real_ip_header X-Forwarded-For
+  - set_real_ip_from 0.0.0.0/0
+  - sendfile "on"
+  - tcp_nopush "on"
+  - tcp_nodelay "on"
+  - keepalive_timeout "65"
+  - access_log "{{nginx_log_dir}}/access.log"
+  - "error_log {{nginx_log_dir}}/error.log {{nginx_error_log_level}}"
+  - server_tokens off
+  - types_hash_max_size 2048
+  - gzip on
+  - gzip_disable "mise6"
+  - gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript
+  - fastcgi_buffers 16 16k
+  - fastcgi_buffer_size 32k
+  
+nginx_configs:
+  proxy:
+      - proxy_set_header Host $http_host
+      - proxy_set_header X-Real-IP $remote_addr
+      - proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for
+      - proxy_set_header X-Forwarded-Proto $scheme
