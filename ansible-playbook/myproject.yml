@@ -36,3 +36,8 @@
     shell: "npm install"
     args:
       chdir: /var/www/myproject/web/bundle
+
+  - name: Dump Webpack
+    shell: "node_modules/.bin/webpack"
+    args:
+      chdir: /var/www/myproject/web/bundle
